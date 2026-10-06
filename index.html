@@ -51,13 +51,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:6px 0;border-bottom:1px 
 @keyframes pop{from{transform:scale(.4);opacity:0}}@keyframes fade{to{opacity:0;visibility:hidden}}
 @media (prefers-reduced-motion:reduce){#splash{animation-delay:.6s}#splash .logo{animation:none}}
 @media print{header,nav,.noprint,#splash{display:none!important}body{background:#fff}main{padding:0}.bill{border:0}}
-</style>
-<meta name="theme-color" content="#f97316">
-<meta name="description" content="Swami Samarth Auto Garage — offline-first garage job cards, billing and inventory.">
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./icon.svg" type="image/svg+xml">
-
-</head><body>
+</style></head><body>
 <div id="splash"></div>
 <header><span class="logo" id="lg0"></span><div><h1 id="t1"></h1><small id="t2"></small></div></header>
 <main id="app"></main>
@@ -114,18 +108,20 @@ detail(){const j=find();if(!j)return V.all();const h=jobs.filter(x=>x.reg&&x.reg
 <p>${esc(j.cust)} · ${j.phone?`<a href="tel:${esc(j.phone)}">${esc(j.phone)}</a>`:"no mobile"}<br>Odometer: ${j.odo?esc(j.odo)+" km":"not recorded"}<br><span class="mute">${fmt(j.created)} · Job #${no(j)}</span></p>
 <p><b>Job:</b> ${(j.types||[]).map(esc).join(", ")||"not set"}</p>
 <table>${lines(j)}<tr class="gt"><td>Total</td><td class="r">${rs(total(j))}</td></tr></table>
-<div class="acts"><button class="btn" data-a="toggle">${j.done?"Mark pending":"Mark completed"}</button><button class="btn ghost" data-a="edit">Edit</button><button class="btn ghost" data-a="bill">Print bill</button></div>
+<div class="acts"><button class="btn" data-a="toggle">${j.done?"Mark pending":"Mark completed"}</button><button class="btn ghost" data-a="edit">Edit</button><button class="btn ghost" data-a="bill">Print bill</button><button class="btn ghost" data-a="sharebill">Share bill</button></div>
 <button class="btn ghost danger" data-a="del">Delete job</button></div>
 ${j.reg?`<h2>Vehicle history · ${esc(j.reg)}</h2>${h.map(card).join("")||`<p class="mute">No other visits recorded for this vehicle.</p>`}`:""}`},
 bill(){const j=find();if(!j)return V.all();
- return`<div class="noprint acts" style="margin:0 0 12px"><button class="btn" data-a="print">Print bill</button><button class="btn ghost" data-a="back">Back</button></div>
-<div class="bill"><div class="bh"><span class="logo">${logo()}</span><div><b>${esc(S.name)}</b><br>${esc(S.sub)}<br>${esc(S.addr)} ${esc(S.phone)}</div></div><hr>
+ return`<div class="noprint acts" style="margin:0 0 12px"><button class="btn" data-a="sharebill">Share bill</button><button class="btn ghost" data-a="print">Print bill</button><button class="btn ghost" data-a="back">Back</button></div>
+<div class="bill"><div class="bh"><span class="logo">${logo()}</span><div><b>${esc(S.name)}</b><br>${esc(S.sub)}<br>${esc(S.addr)} ${esc(S.phone)}<br>${[0,1].map(i=>S["cn"+i]&&S["cp"+i]?`${esc(S["cn"+i])}: ${esc(S["cp"+i])}`:"").filter(Boolean).join(" · ")}</div></div><hr>
 <p>Bill no: ${no(j)}<br>Date: ${fmt(Date.now())}<br>Job date: ${fmt(j.created)}</p>
 <p><b>${esc(j.cust)}</b> ${esc(j.phone)}<br>${esc(j.make)} · ${esc(j.reg)}${j.odo?" · "+esc(j.odo)+" km":""}</p>
 <p>Job: ${(j.types||[]).map(esc).join(", ")||"—"}</p>
 <table><tr><th>Item</th><th class="r">Amount</th></tr>${lines(j)}<tr class="gt"><td>Grand total</td><td class="r">${rs(total(j))}</td></tr></table>
 <p style="margin-top:16px;text-align:center">${esc(S.note)}</p></div>`},
 set(){return`<h2>Settings</h2><div class="card" id="s"><label>Garage name<input name="name" value="${esc(S.name)}"></label><label>Subtitle<input name="sub" value="${esc(S.sub)}"></label><label>Phone<input name="phone" type="tel" value="${esc(S.phone)}"></label><label>Address<textarea name="addr" rows="2">${esc(S.addr)}</textarea></label><label>Bill footer note<input name="note" value="${esc(S.note)}"></label><p class="lb">Contacts</p>${[0,1].map(i=>`<div style="margin-bottom:12px"><input name="cn${i}" aria-label="Contact name" value="${esc(S["cn"+i])}"><div class="row" style="grid-template-columns:1fr auto;margin-top:6px"><input name="cp${i}" type="tel" inputmode="tel" aria-label="Contact phone" value="${esc(S["cp"+i])}"><a class="btn ghost" href="tel:${esc(S["cp"+i])}">Call</a></div></div>`).join("")}<label>Logo<input type="file" id="lg" accept="image/*"></label><button class="btn big" data-a="saveset">Save settings</button><p id="sm" class="mute" role="status"></p></div><h2>Backup</h2><div class="card"><p class="mute" style="margin-top:0">Save a copy of all jobs, spare parts and settings to a file. Do this regularly and keep the file somewhere safe, like Google Drive.</p><button class="btn big" data-a="backup" style="margin-top:0">Download backup</button><label style="margin-top:10px">Restore from a backup file<input type="file" id="rf" accept=".json,application/json"></label><p id="bm" class="mute" role="status"></p></div><p class="mute">Jobs and settings are stored on this device only.</p>`}};
+
+function shareBill(){const j=find();if(!j)return;const contacts=[0,1].map(i=>S["cn"+i]&&S["cp"+i]?`${S["cn"+i]}: ${S["cp"+i]}`:"").filter(Boolean).join("\n");const text=`${S.name}\n${S.sub||""}\n${S.addr||""}${S.phone?`\n${S.phone}`:""}\n\nBill No: ${no(j)}\nDate: ${fmt(Date.now())}\nCustomer: ${j.cust||""}\nMobile: ${j.phone||"—"}\nVehicle: ${[j.make,j.reg].filter(Boolean).join(" · ")||"—"}\nJob: ${(j.types||[]).join(", ")||"—"}\n\n${(j.parts||[]).map(x=>`${x.name||"Part"}: ${rs(x.amt)}`).join("\n")}${Number(j.labour||0)>0?`\nLabour: ${rs(j.labour)}`:""}\nTOTAL: ${rs(total(j))}\n\n${S.note||""}\n\nContact:\n${contacts}`;if(navigator.share){navigator.share({title:`Bill #${no(j)} - ${S.name}`,text}).catch(e=>{if(e.name!=="AbortError")navigator.clipboard?.writeText(text)})}else if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>alert("Bill copied. Paste it into WhatsApp."))}else{const ta=document.createElement("textarea");ta.value=text;document.body.append(ta);ta.select();document.execCommand("copy");ta.remove();alert("Bill copied. Paste it into WhatsApp.")}}
 function draw(){
  $("#lg0").innerHTML=logo();$("#t1").textContent=S.name;$("#t2").textContent=S.sub;
  const nv={detail:"all",bill:"all",spares:"dash"}[view]||view;
@@ -160,7 +156,7 @@ document.addEventListener("click",e=>{
   addstock(){const n=$("#sn").value.trim(),c=$("#sc").value.trim(),q=Number($("#sq").value);if(!n||!(q>0)){$("#serr").textContent="Enter a part name and a quantity above 0.";return}
    const t=stock.find(x=>x.name.toLowerCase()===n.toLowerCase()&&(x.car||"").toLowerCase()===c.toLowerCase());if(t)t.qty+=q;else stock.push({id:"s"+Date.now().toString(36),name:n,car:c,qty:q,used:0});put("ss_stock",stock);draw()},
   delstock(){if(!d.sure){d.sure=1;b.textContent="Tap again to confirm";return}stock=stock.filter(x=>x.id!==d.id);put("ss_stock",stock);draw()},
-  save,edit(){go("new")},back(){go("detail")},bill(){go("bill")},print(){window.print()},
+  save,edit(){go("new")},back(){go("detail")},bill(){go("bill")},sharebill(){shareBill()},print(){window.print()},
   toggle(){j.done=!j.done;put("ss_jobs",jobs);draw()},
   del(){if(!d.sure){d.sure=1;b.textContent="Tap again to confirm delete";return}for(const id in j.inv||{}){const t=stock.find(x=>x.id===id);if(t){t.qty+=j.inv[id];t.used=Math.max(0,(t.used||0)-j.inv[id])}}put("ss_stock",stock);jobs=jobs.filter(x=>x!==j);put("ss_jobs",jobs);go("all")},
   saveset(){readS();put("ss_set",S);draw();$("#sm").textContent="Saved."},
@@ -189,15 +185,4 @@ $("#app").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0
 $("#splash").innerHTML=`<span class="logo">${logo()}</span><p style="margin:0">${esc(S.name)}</p>`;
 setTimeout(()=>$("#splash")?.remove(),1900);
 draw();
-</script>
-<script>
-if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch((err) => {
-      console.warn("Offline support setup failed:", err);
-    });
-  });
-}
-</script>
-
-</body></html>
+</script></body></html>
