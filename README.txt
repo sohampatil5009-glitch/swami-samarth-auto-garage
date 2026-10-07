@@ -1,1 +1,1 @@
-Swami Samarth Auto Garage PWA - updated bill sharing and contacts.
+Payment update: Paid/Partially Paid/Unpaid, Amount Paid, Balance Due, Payment Method, Share Bill, Garage contacts. No Dashboard Outstanding card.

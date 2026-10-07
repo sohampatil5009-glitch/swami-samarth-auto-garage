@@ -1,1 +1,1 @@
-{"name":"Swami Samarth Auto Garage","short_name":"Swami Garage","start_url":"./index.html","scope":"./","display":"standalone","background_color":"#fff7ed","theme_color":"#f97316","icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{"name":"Swami Samarth Auto Garage","short_name":"Swami Garage","start_url":"./","display":"standalone","background_color":"#fff","theme_color":"#f97316","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml"}]}
