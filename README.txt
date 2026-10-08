@@ -1,1 +1,1 @@
-Payment update: Paid/Partially Paid/Unpaid, Amount Paid, Balance Due, Payment Method, Share Bill, Garage contacts. No Dashboard Outstanding card.
+Google Login update for Swami Samarth Auto Garage. Upload all five files to the GitHub Pages repository root.

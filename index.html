@@ -56,6 +56,46 @@ table{width:100%;border-collapse:collapse}td,th{padding:6px 0;border-bottom:1px 
 <header><span class="logo" id="lg0"></span><div><h1 id="t1"></h1><small id="t2"></small></div></header>
 <main id="app"></main>
 <nav aria-label="Main"><button data-v="dash"><span>⌂</span>Dashboard</button><button data-v="new"><span>＋</span>New Job</button><button data-v="all"><span>☰</span>All Jobs</button><button data-v="search"><span>⌕</span>Search</button><button data-v="set"><span>⚙</span>Settings</button></nav>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDCwaal7T8yQiERKgeH4Zh5vSR70bZR1To",
+    authDomain: "swami-samarth-auto-garage.firebaseapp.com",
+    projectId: "swami-samarth-auto-garage",
+    storageBucket: "swami-samarth-auto-garage.firebasestorage.app",
+    messagingSenderId: "57987538708",
+    appId: "1:57987538708:web:ef1e32d23d595f3b6b2c01",
+    measurementId: "G-1X00P3NDXE"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  window.ssFirebase = {
+    auth,
+    async signIn() {
+      await signInWithRedirect(auth, provider);
+    },
+    async signOut() {
+      await signOut(auth);
+    }
+  };
+
+  getRedirectResult(auth).catch(err => {
+    console.error("Google sign-in:", err);
+    window.dispatchEvent(new CustomEvent("ss-auth-error", {detail: err.message || "Google sign-in failed"}));
+  });
+
+  onAuthStateChanged(auth, user => {
+    window.ssUser = user || null;
+    window.dispatchEvent(new CustomEvent("ss-auth-changed", {detail: user || null}));
+  });
+</script>
+
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -63,6 +103,26 @@ const rs=n=>"₹"+Number(n||0).toLocaleString("en-IN");
 const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 const put=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let jobs=load("ss_jobs",[]),stock=load("ss_stock",[]),S={name:"श्री स्वामी समर्थ ऑटो गॅरेज",sub:"Swami Samarth Auto Garage",phone:"",addr:"",note:"Thank you for choosing us. Drive safe!",logo:"",cn0:"दिपक मिस्त्री",cp0:"9765791176",cn1:"जगदीश मिस्त्री",cp1:"9923477672",...load("ss_set",{})};
+
+let ssUser=null;
+function updateAuthUI(){
+  const state=document.getElementById("authState");
+  const inBtn=document.getElementById("googleSignIn");
+  const outBtn=document.getElementById("googleSignOut");
+  if(!state||!inBtn||!outBtn)return;
+  if(ssUser){
+    state.innerHTML=`Signed in as <b>${esc(ssUser.email||ssUser.displayName||"Google account")}</b>`;
+    inBtn.style.display="none";
+    outBtn.style.display="";
+  }else{
+    state.textContent="Not signed in";
+    inBtn.style.display="";
+    outBtn.style.display="none";
+  }
+}
+window.addEventListener("ss-auth-changed",e=>{ssUser=e.detail||null;updateAuthUI()});
+window.addEventListener("ss-auth-error",e=>alert(e.detail||"Google sign-in failed."));
+
 let view="dash",cur=null,filter="all";
 const TYPES=["Engine Work","Tyre Change","AC Service","Body Work","Electrical","Oil Change"];
 const total=j=>(j.parts||[]).reduce((s,p)=>s+Number(p.amt||0),0)+Number(j.labour||0);
@@ -121,7 +181,16 @@ bill(){const j=find();if(!j)return V.all();
 <p>Job: ${(j.types||[]).map(esc).join(", ")||"—"}</p>
 <table><tr><th>Item</th><th class="r">Amount</th></tr>${lines(j)}<tr class="gt"><td>Grand total</td><td class="r">${rs(total(j))}</td></tr></table><div style="margin-top:14px;padding:10px;border:1px solid #ddd;border-radius:8px"><b>Payment: ${paymentStatus(j)}</b><br>Amount Paid: ${rs(paidAmount(j))}<br>Balance Due: <b>${rs(balanceDue(j))}</b>${j.paymethod?`<br>Payment Method: ${esc(j.paymethod)}`:""}</div>
 <p style="margin-top:16px;text-align:center">${esc(S.note)}</p></div>`},
-set(){return`<h2>Settings</h2><div class="card" id="s"><label>Garage name<input name="name" value="${esc(S.name)}"></label><label>Subtitle<input name="sub" value="${esc(S.sub)}"></label><label>Phone<input name="phone" type="tel" value="${esc(S.phone)}"></label><label>Address<textarea name="addr" rows="2">${esc(S.addr)}</textarea></label><label>Bill footer note<input name="note" value="${esc(S.note)}"></label><p class="lb">Contacts</p>${[0,1].map(i=>`<div style="margin-bottom:12px"><input name="cn${i}" aria-label="Contact name" value="${esc(S["cn"+i])}"><div class="row" style="grid-template-columns:1fr auto;margin-top:6px"><input name="cp${i}" type="tel" inputmode="tel" aria-label="Contact phone" value="${esc(S["cp"+i])}"><a class="btn ghost" href="tel:${esc(S["cp"+i])}">Call</a></div></div>`).join("")}<label>Logo<input type="file" id="lg" accept="image/*"></label><button class="btn big" data-a="saveset">Save settings</button><p id="sm" class="mute" role="status"></p></div><h2>Backup</h2><div class="card"><p class="mute" style="margin-top:0">Save a copy of all jobs, spare parts and settings to a file. Do this regularly and keep the file somewhere safe, like Google Drive.</p><button class="btn big" data-a="backup" style="margin-top:0">Download backup</button><label style="margin-top:10px">Restore from a backup file<input type="file" id="rf" accept=".json,application/json"></label><p id="bm" class="mute" role="status"></p></div><p class="mute">Jobs and settings are stored on this device only.</p>`}};
+set(){return`<h2>Settings</h2>
+<div class="card">
+  <div style="font-weight:700;margin-bottom:4px">Google account</div>
+  <div id="authState" class="mute">Checking sign-in status…</div>
+  <div class="acts">
+    <button class="btn" id="googleSignIn" type="button">Sign in with Google</button>
+    <button class="btn ghost" id="googleSignOut" type="button" style="display:none">Sign out</button>
+  </div>
+  <p class="lb">Google sign-in is connected. Cloud data sync will be added in the next step.</p>
+</div><div class="card" id="s"><label>Garage name<input name="name" value="${esc(S.name)}"></label><label>Subtitle<input name="sub" value="${esc(S.sub)}"></label><label>Phone<input name="phone" type="tel" value="${esc(S.phone)}"></label><label>Address<textarea name="addr" rows="2">${esc(S.addr)}</textarea></label><label>Bill footer note<input name="note" value="${esc(S.note)}"></label><p class="lb">Contacts</p>${[0,1].map(i=>`<div style="margin-bottom:12px"><input name="cn${i}" aria-label="Contact name" value="${esc(S["cn"+i])}"><div class="row" style="grid-template-columns:1fr auto;margin-top:6px"><input name="cp${i}" type="tel" inputmode="tel" aria-label="Contact phone" value="${esc(S["cp"+i])}"><a class="btn ghost" href="tel:${esc(S["cp"+i])}">Call</a></div></div>`).join("")}<label>Logo<input type="file" id="lg" accept="image/*"></label><button class="btn big" data-a="saveset">Save settings</button><p id="sm" class="mute" role="status"></p></div><h2>Backup</h2><div class="card"><p class="mute" style="margin-top:0">Save a copy of all jobs, spare parts and settings to a file. Do this regularly and keep the file somewhere safe, like Google Drive.</p><button class="btn big" data-a="backup" style="margin-top:0">Download backup</button><label style="margin-top:10px">Restore from a backup file<input type="file" id="rf" accept=".json,application/json"></label><p id="bm" class="mute" role="status"></p></div><p class="mute">Jobs and settings are stored on this device only.</p>`}};
 
 function shareBill(){const j=find();if(!j)return;const contacts=[0,1].map(i=>S["cn"+i]&&S["cp"+i]?`${S["cn"+i]}: ${S["cp"+i]}`:"").filter(Boolean).join("\n");const text=`${S.name}\n${S.sub||""}\n${S.addr||""}${S.phone?`\n${S.phone}`:""}\n\nBill No: ${no(j)}\nDate: ${fmt(Date.now())}\nCustomer: ${j.cust||""}\nMobile: ${j.phone||"—"}\nVehicle: ${[j.make,j.reg].filter(Boolean).join(" · ")||"—"}\nJob: ${(j.types||[]).join(", ")||"—"}\n\n${(j.parts||[]).map(x=>`${x.name||"Part"}: ${rs(x.amt)}`).join("\n")}${Number(j.labour||0)>0?`\nLabour: ${rs(j.labour)}`:""}\nTOTAL: ${rs(total(j))}\n\n${S.note||""}\n\nContact:\n${contacts}`;if(navigator.share){navigator.share({title:`Bill #${no(j)} - ${S.name}`,text}).catch(e=>{if(e.name!=="AbortError")navigator.clipboard?.writeText(text)})}else if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>alert("Bill copied. Paste it into WhatsApp."))}else{const ta=document.createElement("textarea");ta.value=text;document.body.append(ta);ta.select();document.execCommand("copy");ta.remove();alert("Bill copied. Paste it into WhatsApp.")}}
 function draw(){
@@ -187,4 +256,14 @@ $("#app").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0
 $("#splash").innerHTML=`<span class="logo">${logo()}</span><p style="margin:0">${esc(S.name)}</p>`;
 setTimeout(()=>$("#splash")?.remove(),1900);
 draw();
+
+document.addEventListener("click",e=>{
+  if(e.target.id==="googleSignIn"){
+    window.ssFirebase?.signIn().catch(err=>alert(err.message||"Google sign-in failed."));
+  }
+  if(e.target.id==="googleSignOut"){
+    window.ssFirebase?.signOut().catch(err=>alert(err.message||"Sign-out failed."));
+  }
+});
+updateAuthUI();
 </script></body></html>
