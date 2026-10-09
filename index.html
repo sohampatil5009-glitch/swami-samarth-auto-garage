@@ -59,7 +59,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:6px 0;border-bottom:1px 
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDCwaal7T8yQiERKgeH4Zh5vSR70bZR1To",
@@ -78,19 +78,21 @@ table{width:100%;border-collapse:collapse}td,th{padding:6px 0;border-bottom:1px 
   window.ssFirebase = {
     auth,
     async signIn() {
-      await signInWithRedirect(auth, provider);
+      try {
+        return (await signInWithPopup(auth, provider)).user;
+      } catch (err) {
+        console.error("Google sign-in:", err);
+        window.dispatchEvent(new CustomEvent("ss-auth-error", {
+          detail: err?.message || err?.code || "Google sign-in failed"
+        }));
+        throw err;
+      }
     },
     async signOut() {
       await signOut(auth);
     }
   };
-
-  getRedirectResult(auth).catch(err => {
-    console.error("Google sign-in:", err);
-    window.dispatchEvent(new CustomEvent("ss-auth-error", {detail: err.message || "Google sign-in failed"}));
-  });
-
-  onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, user => {
     window.ssUser = user || null;
     window.dispatchEvent(new CustomEvent("ss-auth-changed", {detail: user || null}));
   });
@@ -121,7 +123,12 @@ function updateAuthUI(){
   }
 }
 window.addEventListener("ss-auth-changed",e=>{ssUser=e.detail||null;updateAuthUI()});
-window.addEventListener("ss-auth-error",e=>alert(e.detail||"Google sign-in failed."));
+window.addEventListener("ss-auth-error", e => {
+  const msg = e.detail || "Google sign-in failed.";
+  const state = document.getElementById("authState");
+  if (state) state.textContent = "Sign-in error: " + msg;
+  alert("Google sign-in failed.\n\n" + msg);
+});
 
 let view="dash",cur=null,filter="all";
 const TYPES=["Engine Work","Tyre Change","AC Service","Body Work","Electrical","Oil Change"];
