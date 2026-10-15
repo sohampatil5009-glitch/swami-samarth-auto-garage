@@ -51,6 +51,14 @@ table{width:100%;border-collapse:collapse}td,th{padding:6px 0;border-bottom:1px 
 @media (prefers-reduced-motion:reduce){#splash{animation-delay:.6s}#splash .logo{animation:none}}
 @media print{header,nav,.noprint,#splash{display:none!important}body{background:#fff}main{padding:0}.bill{border:0}}
 </style></head><body>
+<section id="ss-auth-panel" aria-label="Google account sign in">
+  <strong>Google account</strong>
+  <p style="margin:6px 0 10px;font-size:13px">Sign in to your garage account. Your existing jobs and settings remain stored on this device.</p>
+  <button id="ss-google-signin" type="button">Continue with Google</button>
+  <div id="ss-auth-user" aria-live="polite"></div>
+  <p id="ss-auth-status" role="status" aria-live="polite">Build 2026-10-10. Sign-in is ready; internet connection is required.</p>
+</section>
+
 <div id="splash"></div>
 <header><span class="logo" id="lg0"></span><div><h1 id="t1"></h1><small id="t2"></small></div></header>
 <main id="app"></main>
@@ -180,16 +188,10 @@ draw();
 #ss-auth-status{font-size:13px;line-height:1.45;margin:10px 0 0;overflow-wrap:anywhere;color:#444}
 #ss-auth-user{font-size:13px;margin-top:8px;overflow-wrap:anywhere}
 </style>
-<section id="ss-auth-panel" aria-label="Google account sign in">
-  <strong>Google account</strong>
-  <p style="margin:6px 0 10px;font-size:13px">Sign in to your garage account. Your existing jobs and settings remain stored on this device.</p>
-  <button id="ss-google-signin" type="button">Continue with Google</button>
-  <div id="ss-auth-user" aria-live="polite"></div>
-  <p id="ss-auth-status" role="status" aria-live="polite">Sign-in is ready. Internet connection is required.</p>
-</section>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 const firebaseConfig = {
   apiKey: "AIzaSyDCwaal7T8yQiERKgeH4Zh5vSR70bZR1To",
   authDomain: "swami-samarth-auto-garage.firebaseapp.com",
@@ -206,6 +208,7 @@ const say=(message)=>{status.textContent=message;};
 try {
   const app=initializeApp(firebaseConfig);
   const auth=getAuth(app);
+  await setPersistence(auth, browserLocalPersistence);
   const provider=new GoogleAuthProvider();
   provider.setCustomParameters({prompt:'select_account'});
   btn.addEventListener('click', async()=>{
